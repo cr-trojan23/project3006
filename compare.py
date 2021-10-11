@@ -16,8 +16,6 @@ def registerFaces(targetCapture):
         print(e)
 
 # For comparing faces
-
-
 def compareFaces(target):
     # Rekognition client (Rekognition is a service that recognizes faces in images)
     rekognition = boto3.client('rekognition')
