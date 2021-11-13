@@ -4,37 +4,44 @@ import time
 from botocore.exceptions import ClientError
 
 # For new user registration
-
-
 def registerFaces(targetCapture):
-    s3 = boto3.client('s3')  # S3 client (S3 is an object storage service)
-    bucket = 'project3006'  # Bucket name (Folder to store images in S3)
+    s3 = boto3.client("s3")  # S3 client (S3 is an object storage service)
+    bucket = "project3006"  # Bucket name (Folder to store images in S3)
     try:
         # Upload targetCapture image to project3006 bucket with name someuser1.jpg
-        s3.upload_file(targetCapture, bucket, 'someuser1.jpg')
+        s3.upload_file(targetCapture, bucket, "someuser1.jpg")
     except ClientError as e:  # If error, print error
         print(e)
+
 
 # For comparing faces
 def compareFaces(target):
     # Rekognition client (Rekognition is a service that recognizes faces in images)
-    rekognition = boto3.client('rekognition')
+    rekognition = boto3.client("rekognition")
+    confidence = ""
     imageSource = {
-        'S3Object': {
-            'Bucket': 'project3006',
-            'Name': 'someuser1.jpg'
-        }
+        "S3Object": {"Bucket": "project3006", "Name": "someuser1.jpg"}
     }  # Image of user taken when registering
-    imageTarget = open(target, 'rb')  # Image of user taken when comparing
-    response = rekognition.compare_faces(SimilarityThreshold=80,
-                                         SourceImage=imageSource,
-                                         TargetImage={'Bytes': imageTarget.read()})  # Compare faces
+    imageTarget = open(target, "rb")  # Image of user taken when comparing
 
-    for faceMatch in response['FaceMatches']:  # For each face match
-        # Get confidence of match
-        confidence = str(faceMatch['Face']['Confidence'])
-        print('The face matches with ' + confidence +
-             '% confidence')  # Print confidence
+    try:
+        response = rekognition.compare_faces(
+            SimilarityThreshold=98,
+            SourceImage=imageSource,
+            TargetImage={"Bytes": imageTarget.read()},
+        )  # Compare faces
+
+        for faceMatch in response["FaceMatches"]:  # For each face match
+            # Get confidence of match
+            confidence = str(faceMatch["Face"]["Confidence"])
+
+        print(
+            "The face matches with " + confidence + "% confidence"
+        )  # Print confidence
+
+    except ClientError as e:  # If error, print error
+        print(e.response["Error"]["Message"])
+        print("Error: Could not compare faces")
 
     imageTarget.close()  # Close imageTarget
 
@@ -44,24 +51,24 @@ def capture():
     camera = cv2.VideoCapture(0)  # Open webcam
     ret, frame = camera.read()  # Read image from webcam
     time.sleep(2)  # Wait 2 seconds
-    cv2.imwrite('/tmp/img.jpg', frame)  # Save image to /tmp/img.jpg
+    cv2.imwrite("/tmp/img.png", frame)  # Save image to /tmp/img.jpg
     camera.release()  # Release webcam
 
 
 def main():
     print("What do you want to do?\n 1. Register\n 2. Compare\n 3. Exit")
     choice = input()
-    if choice == '1':
+    if choice == "1":
         capture()  # Capture image from webcam
-        targetCapture = '/tmp/img.jpg'  # Target image
+        targetCapture = "/tmp/img.png"  # Target image
         registerFaces(targetCapture)  # Register image
-    elif choice == '2':
+    elif choice == "2":
         capture()  # Capture image from webcam
-        targetCapture = '/tmp/img.jpg'  # Target image
+        targetCapture = "/tmp/img.png"  # Target image
         compareFaces(targetCapture)  # Compare image
-    elif choice == '3':
+    elif choice == "3":
         exit()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
