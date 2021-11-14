@@ -1,7 +1,7 @@
 import boto3
 import cv2
 import time
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, ProfileNotFound
 
 # For new user registration
 def registerFaces(targetCapture):
@@ -31,17 +31,18 @@ def compareFaces(target):
             TargetImage={"Bytes": imageTarget.read()},
         )  # Compare faces
 
-        for faceMatch in response["FaceMatches"]:  # For each face match
-            # Get confidence of match
-            confidence = str(faceMatch["Face"]["Confidence"])
-
-        print(
-            "The face matches with " + confidence + "% confidence"
-        )  # Print confidence
+        if len(response["FaceMatches"]) == 0:
+            print("No match found")
+        else:
+            for faceMatch in response["FaceMatches"]:  # For each face match
+                confidence = str(faceMatch["Face"]["Confidence"])
+                print(
+                    "The face matches with " + confidence + "% confidence"
+                )  # Print confidence
 
     except ClientError as e:  # If error, print error
-        print(e.response["Error"]["Message"])
-        print("Error: Could not compare faces")
+        if e.response["Error"]["Code"] == "InvalidParameterException":
+            print("Face not found")
 
     imageTarget.close()  # Close imageTarget
 
