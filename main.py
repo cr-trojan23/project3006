@@ -7,9 +7,12 @@ from botocore.exceptions import ClientError, ProfileNotFound
 def registerFaces(targetCapture):
     s3 = boto3.client("s3")  # S3 client (S3 is an object storage service)
     bucket = "project3006"  # Bucket name (Folder to store images in S3)
+    print("Connected to S3")
     try:
-        # Upload targetCapture image to project3006 bucket with name someuser1.jpg
-        s3.upload_file(targetCapture, bucket, "someuser1.jpg")
+        # Upload targetCapture image to project3006 bucket with name someuser1.png
+        print("Uploading image to S3")
+        s3.upload_file(targetCapture, bucket, "someuser1.png")
+        print("Image uploaded")
     except ClientError as e:  # If error, print error
         print(e)
 
@@ -19,9 +22,11 @@ def compareFaces(target):
     # Rekognition client (Rekognition is a service that recognizes faces in images)
     rekognition = boto3.client("rekognition")
     confidence = ""
+    print("Connected to AWS Rekognition")
     imageSource = {
         "S3Object": {"Bucket": "project3006", "Name": "someuser1.jpg"}
     }  # Image of user taken when registering
+    print("Fetching image from S3")
     imageTarget = open(target, "rb")  # Image of user taken when comparing
 
     try:
@@ -30,6 +35,7 @@ def compareFaces(target):
             SourceImage=imageSource,
             TargetImage={"Bytes": imageTarget.read()},
         )  # Compare faces
+        print("Faces compared")
 
         if len(response["FaceMatches"]) == 0:
             print("No match found")
@@ -51,8 +57,10 @@ def compareFaces(target):
 def capture():
     camera = cv2.VideoCapture(0)  # Open webcam
     ret, frame = camera.read()  # Read image from webcam
+    print("Capturing image")
     time.sleep(2)  # Wait 2 seconds
     cv2.imwrite("/tmp/img.png", frame)  # Save image to /tmp/img.jpg
+    print("Writing image to /tmp/img.png")
     camera.release()  # Release webcam
 
 
