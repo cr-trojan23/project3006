@@ -1,5 +1,5 @@
-colorama==0.4.4
-botocore==1.21.63
 opencv_python==4.5.3.56
+botocore==1.21.63
 boto3==1.18.63
+colorama==0.4.4
 mysql_connector_repackaged==0.3.1
