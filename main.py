@@ -84,7 +84,7 @@ def capture():
     camera = cv2.VideoCapture(0)  # Open webcam
     print("[INFO]: Capturing image")
     print("[INFO]: Press SPACE to capture image or ESC to exit")
-    time.sleep(2)  # Wait for 2 seconds
+    time.sleep(1)  # Wait for 2 seconds
     while True:
         ret, frame = camera.read()  # Read image from webcam
         if not ret:
