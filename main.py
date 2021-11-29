@@ -83,11 +83,27 @@ def compareFaces(target):
 def capture():
     camera = cv2.VideoCapture(0)  # Open webcam
     print("[INFO]: Capturing image")
-    ret, frame = camera.read()  # Read image from webcam
-    time.sleep(2)  # Wait 2 seconds
-    cv2.imwrite("/tmp/img.png", frame)  # Save image to /tmp/img.jpg
-    print("[INFO]: Image captured")
-    camera.release()  # Release webcam
+    print("[INFO]: Press SPACE to capture image or ESC to exit")
+    time.sleep(2)  # Wait for 2 seconds
+    while True:
+        ret, frame = camera.read()  # Read image from webcam
+        if not ret:
+            print("[INFO]: Failed to capture image.")
+        cv2.namedWindow("Capturing", cv2.WINDOW_NORMAL)  # Create window
+        cv2.imshow("Capturing", frame)  # Show image
+        key = cv2.waitKey(1)  # Wait for key press
+        if key % 256 == 27:  # If esc key is pressed, exit
+            camera.release()
+            cv2.destroyAllWindows()
+            print("[INFO]: Esc key pressed, Exiting")
+            exit()
+
+        elif key % 256 == 32:  # if space key is pressed, save image
+            cv2.imwrite("/tmp/img.png", frame)
+            print("[INFO]: Image captured")
+            camera.release()
+            cv2.destroyAllWindows()
+            break
 
 
 # Insert user details into RDS
