@@ -1,4 +1,3 @@
-from math import e
 import boto3
 import cv2
 import time
@@ -149,10 +148,10 @@ def fetchRDS(name):
     init()
     print(Fore.YELLOW + "Biometric Authentication SUCCESS!!")
     print(Style.RESET_ALL + "[INFO]: Printing data from RDS")
-    print(Fore.GREEN + "Name: " + row[0])
-    print(Fore.GREEN + "Age: " + str(row[1]))
-    print(Fore.GREEN + "Start Date: " + str(row[2]))
-    print(Fore.CYAN + "End Date: " + str(row[3]))
+    print(Fore.CYAN + "Name: " + row[0])
+    print(Fore.CYAN + "Age: " + str(row[1]))
+    print(Fore.CYAN + "Start Date: " + str(row[2]))
+    print(Fore.GREEN + "End Date: " + str(row[3]))
     print(Style.RESET_ALL + "[INFO]: Data fetched from RDS, Closing connections")
     deinit()
     cursor.close()
