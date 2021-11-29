@@ -1,9 +1,13 @@
+from math import e
 import boto3
 import cv2
 import time
 import mysql.connector
 import json
 import random
+import datetime
+from colorama import Fore, init, Style
+from colorama.initialise import deinit
 from botocore.exceptions import ClientError
 
 
@@ -14,16 +18,18 @@ def registerFaces(targetCapture):
     print("[INFO]: Uploading image to S3")
     name = input("Enter your name: ")  # Name of user
     age = input("Enter your age: ")  # Age of user
-    start_date = input("Enter your start date: ")  # Start date of user
+    start_date = str(datetime.date.today())  # Start date of user
     end_date = input("Enter your end date: ")  # End date of user
     image = name + age + start_date + end_date + ".png"  # Name of image
-    ra = random.randint(1, 100)  # Random number
+    ra = random.randint(1, 999)  # Random number
     lic_num = end_date + start_date + age + str(ra)  # License number of user
     try:
         # Upload targetCapture image to project3006 bucket with name someuser1.jpg
         s3.upload_file(targetCapture, bucket, image)
         print("[INFO]: Image uploaded to S3")
-        insertRDS(name, age, start_date, end_date, image, lic_num)
+        insertRDS(
+            name, age, start_date, end_date, image, lic_num
+        )  # Insert user details into RDS
     except ClientError as e:  # If error, print error
         print(e)
 
@@ -32,36 +38,45 @@ def registerFaces(targetCapture):
 def compareFaces(target):
     # Rekognition client (Rekognition is a service that recognizes faces in images)
     rekognition = boto3.client("rekognition")
+    s3 = boto3.client("s3")  # S3 client (S3 is an object storage service)
     print("[INFO]: Connected to Rekognition")
-    similarity = ""
-    imageSource = {
-        "S3Object": {"Bucket": "project3006", "Name": "someuser1.jpg"}
-    }  # Image of user taken when registering
+    print("[INFO]: Connected to S3")
+    print("[INFO]: Comparing faces")
+    similarity = 0.00
+    # loop through all the images in the bucket and compare them to the target image
+    for image in s3.list_objects(Bucket="project3006")["Contents"]:
+        imageSource = {"S3Object": {"Bucket": "project3006", "Name": image["Key"]}}
+        imageTarget = open(target, "rb")  # Image of user taken when comparing
 
-    print("[INFO]: Fetched image from S3")
-    imageTarget = open(target, "rb")  # Image of user taken when comparing
+        try:
+            response = rekognition.compare_faces(
+                SimilarityThreshold=98,
+                SourceImage=imageSource,
+                TargetImage={"Bytes": imageTarget.read()},
+            )  # Compare faces
 
-    try:
-        print("[INFO]: Comparing faces")
-        response = rekognition.compare_faces(
-            SimilarityThreshold=98,
-            SourceImage=imageSource,
-            TargetImage={"Bytes": imageTarget.read()},
-        )  # Compare faces
+            # print("[INFO]: Faces compared")
+            for faceMatch in response["FaceMatches"]:
+                similarity = float(faceMatch["Similarity"])
+                print(similarity, "s")
 
-        print("[INFO]: Faces compared")
+            if similarity > 98.5:
+                imageTarget.close()  # Close imageTarget
+                print("[INFO]: Face matched")
+                print("The face is " + str(similarity) + "% similar")
+                fetchRDS(image["Key"])
+                break
+            elif image == s3.list_objects(Bucket="project3006")["Contents"][-1]:
+                print(Fore.RED + "[INFO]: Face not matched")
+                print("The face is " + str(similarity) + "% similar")
+                imageTarget.close()
+                break
+            else:
+                continue
 
-        for faceMatch in response["FaceMatches"]:  # For each face match
-            # Get similarity of match
-            similarity = str(faceMatch["Similarity"])
-
-        print("The face is " + similarity + "% similar")  # Print similarity %
-
-    except ClientError as e:  # If error, print error
-        print(e.response["Error"]["Message"])
-        print("Error: Could not compare faces")
-
-    imageTarget.close()  # Close imageTarget
+        except ClientError as e:  # On recieving an error, print error
+            if e.response["Error"]["Code"] == "InvalidParameterException":
+                print(Fore.RED + "Face not found")
 
 
 # Capture image from webcam
@@ -75,6 +90,7 @@ def capture():
     camera.release()  # Release webcam
 
 
+# Insert user details into RDS
 def insertRDS(name, age, start_date, end_date, image, lic_num):
     # MySQL Config
     with open("config.json") as config_file:
@@ -109,12 +125,20 @@ def fetchRDS(name):
         host=host, user=user, password=password, database=database
     )
     print("[INFO]: Connected to RDS")
-    cursor = mysql_connection.cursor()
-    sql = "SELECT * FROM users where name = %s".format(name)
-    cursor.execute(sql)
-    rows = cursor.fetchall()
-    for row in rows:
-        print(row)
+    cursor = mysql_connection.cursor(buffered=True)
+    sql = "SELECT * FROM users where image = %s"
+    val = (name,)
+    cursor.execute(sql, val)
+    row = cursor.fetchone()
+    init()
+    print(Fore.YELLOW + "Biometric Authentication SUCCESS!!")
+    print(Style.RESET_ALL + "[INFO]: Printing data from RDS")
+    print(Fore.GREEN + "Name: " + row[0])
+    print(Fore.GREEN + "Age: " + str(row[1]))
+    print(Fore.GREEN + "Start Date: " + str(row[2]))
+    print(Fore.CYAN + "End Date: " + str(row[3]))
+    print(Style.RESET_ALL + "[INFO]: Data fetched from RDS, Closing connections")
+    deinit()
     cursor.close()
     mysql_connection.close()
 
@@ -132,6 +156,9 @@ def main():
         compareFaces(targetCapture)  # Compare image
     elif choice == "3":
         exit()
+    else:
+        print("Invalid choice")
+        main()
 
 
 if __name__ == "__main__":
