@@ -36,5 +36,5 @@ python3 main.py
 
 
 ## Infrastructure
-![INFRA](https://raw.githubusercontent.com/cr-trojan23/project3006/main/infrastructure.png)
+![INFRA](https://raw.githubusercontent.com/cr-trojan23/project3006/cloud-based/infrastructure.png)
 
