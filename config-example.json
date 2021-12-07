@@ -1,8 +1,0 @@
-{
-    "mysql":{
-        "host":"localhost or any mysql server endpoint",
-        "user":"root",
-        "passwd":"my secret password",
-        "db":"db-name"
-    }
-}
