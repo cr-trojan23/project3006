@@ -1,6 +1,6 @@
-## PROJECT3006
+## SEP_PROJECT
 <h2>Face Biometrics in public transportation systems</h2>
-Tools used: Python, Amazon Web Services (S3, Amazon Rekognition, RDS), AWS SDK(Boto3), OpenCV, MySQL<br><br>
+Tools used: Python, Amazon Web Services (S3, Amazon Rekognition, RDS), AWS Python SDK(Boto3), OpenCV, MySQL<br><br>
 
 ## Setup
 <p>

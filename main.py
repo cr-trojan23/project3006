@@ -1,17 +1,17 @@
 import boto3
 import cv2
 import time
-import mysql.connector
 import json
 import random
 import datetime
+import mysql.connector
 from colorama import Fore, init, Style
 from colorama.initialise import deinit
 from botocore.exceptions import ClientError
 
 
 # For new user registration
-def registerFaces(targetCapture):
+def register_face(target_capture):
     s3 = boto3.client("s3")  # S3 client (S3 is an object storage service)
     bucket = "project3006"  # Bucket name (Folder to store images in S3)
     print("[INFO]: Uploading image to S3")
@@ -23,10 +23,10 @@ def registerFaces(targetCapture):
     ra = random.randint(1, 999)  # Random number
     lic_num = end_date + start_date + age + str(ra)  # License number of user
     try:
-        # Upload targetCapture image to project3006 bucket with name someuser1.jpg
-        s3.upload_file(targetCapture, bucket, image)
+        # Upload target_capture image to project3006 bucket with name someuser1.jpg
+        s3.upload_file(target_capture, bucket, image)
         print("[INFO]: Image uploaded to S3")
-        insertRDS(
+        insert_rds(
             name, age, start_date, end_date, image, lic_num
         )  # Insert user details into RDS
     except ClientError as e:  # If error, print error
@@ -34,7 +34,7 @@ def registerFaces(targetCapture):
 
 
 # For comparing faces
-def compareFaces(target):
+def compare_face(target):
     # Rekognition client (Rekognition is a service that recognizes faces in images)
     rekognition = boto3.client("rekognition")
     s3 = boto3.client("s3")  # S3 client (S3 is an object storage service)
@@ -44,31 +44,31 @@ def compareFaces(target):
     similarity = 0.00
     # loop through all the images in the bucket and compare them to the target image
     for image in s3.list_objects(Bucket="project3006")["Contents"]:
-        imageSource = {"S3Object": {"Bucket": "project3006", "Name": image["Key"]}}
-        imageTarget = open(target, "rb")  # Image of user taken when comparing
+        image_source = {"S3Object": {"Bucket": "project3006", "Name": image["Key"]}}
+        image_target = open(target, "rb")  # Image of user taken when comparing
 
         try:
             response = rekognition.compare_faces(
                 SimilarityThreshold=98,
-                SourceImage=imageSource,
-                TargetImage={"Bytes": imageTarget.read()},
+                SourceImage=image_source,
+                TargetImage={"Bytes": image_target.read()},
             )  # Compare faces
 
             # print("[INFO]: Faces compared")
-            for faceMatch in response["FaceMatches"]:
-                similarity = float(faceMatch["Similarity"])
+            for face_match in response["FaceMatches"]:
+                similarity = float(face_match["Similarity"])
                 print(similarity, "s")
 
             if similarity > 98.5:
-                imageTarget.close()  # Close imageTarget
+                image_target.close()  # Close image_target
                 print("[INFO]: Face matched")
                 print("The face is " + str(similarity) + "% similar")
-                fetchRDS(image["Key"])
+                fetch_rds(image["Key"])
                 break
             elif image == s3.list_objects(Bucket="project3006")["Contents"][-1]:
                 print(Fore.RED + "[INFO]: Face not matched")
                 print("The face is " + str(similarity) + "% similar")
-                imageTarget.close()
+                image_target.close()
                 break
             else:
                 continue
@@ -76,6 +76,7 @@ def compareFaces(target):
         except ClientError as e:  # On recieving an error, print error
             if e.response["Error"]["Code"] == "InvalidParameterException":
                 print(Fore.RED + "Face not found")
+                break
 
 
 # Capture image from webcam
@@ -106,7 +107,7 @@ def capture():
 
 
 # Insert user details into RDS
-def insertRDS(name, age, start_date, end_date, image, lic_num):
+def insert_rds(name, age, start_date, end_date, image, lic_num):
     # MySQL Config
     with open("config.json") as config_file:
         config = json.load(config_file)
@@ -128,7 +129,7 @@ def insertRDS(name, age, start_date, end_date, image, lic_num):
     mysql_connection.close()
 
 
-def fetchRDS(name):
+def fetch_rds(name):
     # MySQL Config
     with open("config.json") as config_file:
         config = json.load(config_file)
@@ -163,12 +164,12 @@ def main():
     choice = input()
     if choice == "1":
         capture()  # Capture image from webcam
-        targetCapture = "/tmp/img.png"  # Target image
-        registerFaces(targetCapture)  # Register image
+        target_capture = "/tmp/img.png"  # Target image
+        register_face(target_capture)  # Register image
     elif choice == "2":
         capture()  # Capture image from webcam
-        targetCapture = "/tmp/img.png"  # Target image
-        compareFaces(targetCapture)  # Compare image
+        target_capture = "/tmp/img.png"  # Target image
+        compare_face(target_capture)  # Compare image
     elif choice == "3":
         exit()
     else:
